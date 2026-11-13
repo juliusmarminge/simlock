@@ -72,6 +72,9 @@ const NO_WORKER = "no worker connected to this gateway can serve agent-device";
 const HOLDER_CANNOT = "the worker holding this lease cannot serve agent-device";
 const TOO_OLD = "refused: this agent-device is too old to use through a gateway; update it";
 const SWEEP_MS = 60_000;
+// why: the agent-device CLI gives `/health` three seconds, so two tries of one second leave the third worker one more.
+const HEALTH_TRY_MS = 1_000;
+const HEALTH_WORKERS = 3;
 // why: after a restart the workers reconnect within this long; until then a lease the index lacks may still be one of theirs.
 const START_WINDOW_MS = 60_000;
 const WORKER_UNREACHABLE = "WORKER_UNREACHABLE";
@@ -217,9 +220,32 @@ export class RelayHostLink implements HostLink {
   async #forwardBare(request: Request, tenant: string): Promise<Response> {
     const path = new URL(request.url).pathname.slice(FRONT_PREFIX.length);
     if (request.method !== "GET" || path !== "/health") return refuseRequest(request, TOO_OLD);
-    const worker = this.options.fleet.capableWorkers().find((candidate) => !candidate.drained);
-    if (worker === undefined) throw new Error(NO_WORKER);
+    const [first, ...rest] = this.options.fleet
+      .capableWorkers()
+      .filter((candidate) => !candidate.drained)
+      .slice(0, HEALTH_WORKERS);
+    if (first === undefined) throw new Error(NO_WORKER);
+    // why: the CLI waits three seconds for `/health` and prints only "Remote daemon is unavailable" for a late or failed answer, so one slow or lost worker must not answer for the fleet (fork: 12 of 25 device proofs the pool failed, 2026-11-13).
+    let worker = first;
+    for (const next of rest) {
+      const answer = await this.#within(
+        this.options.fleet.relay(worker.id, request.clone(), tenant),
+      );
+      if (answer !== undefined && answer.status < 500) return answer;
+      worker = next;
+    }
     return this.options.fleet.relay(worker.id, request, tenant);
+  }
+
+  #within(work: Promise<Response>): Promise<Response | undefined> {
+    return new Promise((resolve) => {
+      const timer = this.options.clock.setTimer(HEALTH_TRY_MS, () => resolve(undefined));
+      const settle = (answer: Response | undefined) => {
+        this.options.clock.cancel(timer);
+        resolve(answer);
+      };
+      work.then(settle, () => settle(undefined));
+    });
   }
 
   stillHeld(leaseId: string): boolean {

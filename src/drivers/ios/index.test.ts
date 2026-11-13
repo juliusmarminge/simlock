@@ -242,6 +242,14 @@ describe("IosSimctlDriver", () => {
     expect(runner.calls).toEqual([{ ...listInvocation, options: { timeoutMs: 30_000 } }]);
   });
 
+  it("resolves a major version to the installed runtime under it", async () => {
+    const driver = await createDriver(scriptedListRunner());
+
+    await expect(
+      driver.resolveSpec({ model: "iPhone 16", osVersion: "18", platform: "ios" }),
+    ).resolves.toEqual({ physical: false, model: "iPhone 16", osVersion: "18.4", platform: "ios" });
+  });
+
   it("refuses a request naming an image tag as an option iOS does not have", async () => {
     const driver = await createDriver(scriptedListRunner());
 

@@ -53,7 +53,7 @@ The grant is the same JSON line as for a simulator, with `device.physical` set t
 | Same, with `--no-wait` | Fails at once with `NO_CAPACITY` (exit 11). |
 
 ```json
-{"error":{"code":"UNKNOWN_MODEL","message":"no enrolled physical device can match ios model iPhone 15 os 18; --os is exact, for any 18.x write --os \">=18 <19\""}}
+{"error":{"code":"UNKNOWN_MODEL","message":"no enrolled physical device can match ios model iPhone 15 os 18"}}
 ```
 
 Physical requests have their own queue. A simulator request never waits behind a physical one, and a request for one phone model never waits behind a request for another.

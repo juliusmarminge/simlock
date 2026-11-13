@@ -172,6 +172,53 @@ describe("RelayHostLink", () => {
     expect((await link.status()).state).toBe("running");
   });
 
+  it("asks the next worker for /health when the first fails, answers 500 or takes over a second", async () => {
+    const health = () => new Request("http://gateway.test/v1/agent-device/health");
+    const workers = ["w1", "w2", "w3", "w4"].map((id) => ({ ...worker, id }));
+    const clock = new FakeClock(1_000);
+    const answers = new Map<string, () => Promise<Response>>();
+    const asked: string[] = [];
+    const link = new RelayHostLink({
+      clock,
+      fleet: {
+        capableWorkers: () => workers,
+        holder: () => undefined,
+        instanceId: "gw1",
+        leaseOf: () => undefined,
+        leasesOf: () => [],
+        reach: () => undefined,
+        startedAt: -1_000_000,
+        onLeaseRemoved: () => undefined,
+        relay: (id) => {
+          asked.push(id);
+          return (answers.get(id) ?? (() => Promise.resolve(new Response(id))))();
+        },
+      },
+      leaseMaxTtlMs: maxTtlMs,
+    });
+
+    answers.set("w1", () => Promise.reject(new Error("worker unreachable")));
+    answers.set("w2", () => Promise.resolve(new Response("down", { status: 503 })));
+    expect(await (await link.forward(health(), agent)).text()).toBe("w3");
+    expect(asked).toEqual(["w1", "w2", "w3"]);
+
+    asked.length = 0;
+    answers.set("w1", () => new Promise<Response>(() => undefined));
+    answers.set("w2", () => Promise.resolve(new Response("w2")));
+    const slow = link.forward(health(), agent);
+    await Promise.resolve();
+    clock.advance(1_000);
+    expect(await (await slow).text()).toBe("w2");
+    expect(asked).toEqual(["w1", "w2"]);
+
+    asked.length = 0;
+    answers.set("w2", () => Promise.reject(new Error("worker unreachable")));
+    answers.set("w3", () => Promise.resolve(new Response("down", { status: 503 })));
+    answers.set("w1", () => Promise.reject(new Error("worker unreachable")));
+    expect((await link.forward(health(), agent)).status).toBe(503);
+    expect(asked).toEqual(["w1", "w2", "w3"]);
+  });
+
   it("reports the holder's ceiling only for a lease it can place and the token owns", async () => {
     const { index, link } = setUp();
     index.set("L", { ownerId: "tok_a", workerId: "w1" });

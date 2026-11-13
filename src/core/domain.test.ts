@@ -435,12 +435,13 @@ describe("fitsPhysical", () => {
     expect(fitsPhysical(ipad, { platform: "ios" })).toBe(false);
   });
 
-  it("matches --os 18.4 to 18.4 and not 18.4.1, --os 18 to no device on 18.4.1, and a range to 18.4.1", () => {
+  it("matches --os 18.4 and --os 18 to a device on 18.4.1, --os 18.5 to none, and a range to 18.4.1", () => {
     const patched = { spec: { ...physicalSpec, osVersion: "18.4.1" } };
 
     expect(fitsPhysical(iphone, { osVersion: "18.4", platform: "ios" })).toBe(true);
-    expect(fitsPhysical(patched, { osVersion: "18.4", platform: "ios" })).toBe(false);
-    expect(fitsPhysical(patched, { osVersion: "18", platform: "ios" })).toBe(false);
+    expect(fitsPhysical(patched, { osVersion: "18.4", platform: "ios" })).toBe(true);
+    expect(fitsPhysical(patched, { osVersion: "18", platform: "ios" })).toBe(true);
+    expect(fitsPhysical(patched, { osVersion: "18.5", platform: "ios" })).toBe(false);
     expect(fitsPhysical(patched, { osVersion: ">=18 <19", platform: "ios" })).toBe(true);
     expect(fitsPhysical(patched, { osVersion: "18 - 18", platform: "ios" })).toBe(true);
   });
@@ -456,25 +457,18 @@ describe("fitsPhysical", () => {
 });
 
 describe("noPhysicalMatch", () => {
-  it("names >=18 <19 for iOS --os 18 and >=18.4 <18.5 for iOS --os 18.4", () => {
-    expect(noPhysicalMatch({ osVersion: "18", platform: "ios" }).message).toContain(">=18 <19");
-    expect(noPhysicalMatch({ osVersion: "18.4", platform: "ios" }).message).toContain(
-      ">=18.4 <18.5",
-    );
-  });
-
-  it("names no range for iOS 18.4.1, for Android 34, Baklava and 34-ext12, for a range, or with no --os", () => {
-    const unnamed = [
+  it("suggests no range: a short version already covers every version under it", () => {
+    const requests = [
+      { osVersion: "18", platform: "ios" },
+      { osVersion: "18.4", platform: "ios" },
       { osVersion: "18.4.1", platform: "ios" },
       { osVersion: "34", platform: "android" },
       { osVersion: "Baklava", platform: "android" },
-      { osVersion: "34-ext12", platform: "android" },
       { osVersion: ">=18 <19", platform: "ios" },
       { platform: "ios" },
     ] as const;
 
-    expect(noPhysicalMatch({ osVersion: "18", platform: "ios" }).message).toContain(">=18 <19");
-    for (const request of unnamed) {
+    for (const request of requests) {
       const { message } = noPhysicalMatch(request);
       expect(message).toContain(request.platform);
       expect(message).not.toMatch(/>=\d+(\.\d+)? <\d/);
@@ -504,10 +498,10 @@ describe("noPhysicalMatch", () => {
       "no enrolled physical device can match ios class phone os in the requested range",
     );
     expect(message({ osVersion: "18.4", platform: "ios" })).toBe(
-      'no enrolled physical device can match ios class phone os 18.4; --os is exact, for any 18.4.x write --os ">=18.4 <18.5"',
+      "no enrolled physical device can match ios class phone os 18.4",
     );
     expect(message({ osVersion: "18.10", platform: "ios" })).toBe(
-      'no enrolled physical device can match ios class phone os 18.10; --os is exact, for any 18.10.x write --os ">=18.10 <18.11"',
+      "no enrolled physical device can match ios class phone os 18.10",
     );
   });
 

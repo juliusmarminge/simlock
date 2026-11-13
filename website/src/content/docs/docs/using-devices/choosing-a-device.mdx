@@ -97,7 +97,7 @@ How ranges work:
 - With a range, you get an idle device inside the range if there is one. Otherwise Simlock creates one on the newest installed OS inside the range.
 - A range never downloads anything. If no installed OS is inside it, the lease fails at once with `RUNTIME_MISSING` (exit 12).
 
-Anything that isn't a range is read as an exact version. That is how Android names like `Baklava` or `34-ext12` work.
+Anything that isn't a range is read as a version. A short one covers everything under it: `26` is any 26.x, and you get the newest installed. A name that is not numbers, like Android's `Baklava` or `34-ext12`, means only itself.
 
 What is refused with `BAD_REQUEST` (exit 2):
 

@@ -1,6 +1,7 @@
 import { requestedClass } from "../contract/operations.js";
 import {
   type OsConstraint as RequestedOs,
+  namesVersion,
   parseOsConstraint,
   satisfies,
 } from "../contract/index.js";
@@ -8,6 +9,10 @@ import { findCatalogModel } from "./catalog-match.js";
 import type { DeviceRequest, DriverCatalogEntry } from "./driver.js";
 
 export type Platform = "ios" | "android";
+
+export function namesOsVersion(wanted: string, version: string): boolean {
+  return namesVersion(wanted, version);
+}
 
 export const DEVICE_CLASSES = [
   "phone",
@@ -704,12 +709,6 @@ function osPhrase(osVersion: string | undefined): readonly string[] {
     : [`os ${osVersion}`];
 }
 
-function rangeAround(osVersion: string): string {
-  const parts = osVersion.split(".").map(Number);
-  const raised = parts.map((part, index) => (index === parts.length - 1 ? part + 1 : part));
-  return `>=${parts.join(".")} <${raised.join(".")}`;
-}
-
 export function noPhysicalMatch(request: PhysicalRequest): {
   readonly message: string;
   readonly details: {
@@ -723,12 +722,6 @@ export function noPhysicalMatch(request: PhysicalRequest): {
     request.model === undefined ? `class ${request.class ?? "phone"}` : `model ${request.model}`,
     ...osPhrase(request.osVersion),
   ];
-  const range =
-    request.platform === "ios" &&
-    request.osVersion !== undefined &&
-    /^\d+(\.\d+)?$/.test(request.osVersion)
-      ? `; --os is exact, for any ${request.osVersion}.x write --os "${rangeAround(request.osVersion)}"`
-      : "";
   return {
     details: {
       platform: request.platform,
@@ -736,6 +729,6 @@ export function noPhysicalMatch(request: PhysicalRequest): {
       ...(request.class === undefined ? {} : { class: request.class }),
       ...(request.osVersion === undefined ? {} : { osVersion: request.osVersion }),
     },
-    message: `no enrolled physical device can match ${request.platform} ${named.join(" ")}${range}`,
+    message: `no enrolled physical device can match ${request.platform} ${named.join(" ")}`,
   };
 }

@@ -9,6 +9,8 @@
  * `>=18 <=26`.
  */
 
+// why: in this fork a bare version is not only exact: it also covers every version under it (`namesVersion`), because agents ask for "iOS 26" and the pool holds 26.0.
+
 /** A version at or above `from`, and below `before` when it has one. */
 interface Bound {
   readonly from?: readonly number[];
@@ -107,11 +109,24 @@ function segments(version: string): readonly number[] {
 }
 
 /**
- * Whether a device OS satisfies a constraint; a bare version is string equality. A version that is
+ * Whether a bare version names a device OS: the same string, or dotted integers the device's
+ * version starts with segment by segment (`26` names `26.0`; `2` does not name `26.0`). A
+ * version that is not dotted integers (`Baklava`, `34-ext12`) names only itself.
+ */
+export function namesVersion(wanted: string, version: string): boolean {
+  if (wanted === version) return true;
+  if (!VERSION.test(wanted) || !VERSION.test(version)) return false;
+  const prefix = segments(wanted);
+  const parts = segments(version);
+  return prefix.length < parts.length && prefix.every((part, index) => part === parts[index]);
+}
+
+/**
+ * Whether a device OS satisfies a constraint; a bare version is `namesVersion`. A version that is
  * not dotted integers (`Baklava`) reads as NaN, which every bound refuses, so it satisfies no range.
  */
 export function satisfies(version: string, constraint: OsConstraint): boolean {
-  if (constraint.kind === "exact") return constraint.version === version;
+  if (constraint.kind === "exact") return namesVersion(constraint.version, version);
   const parts = segments(version);
   return constraint.bounds.every(
     (bound) =>

@@ -10,6 +10,7 @@ import {
   type DeviceInputFactory,
   type DeviceTcp,
   COMPONENT_REMOVAL_TIMEOUT_MS,
+  namesOsVersion,
   type ExactDeviceRequest,
   type Driver,
   type DriverAdvisory,
@@ -484,21 +485,22 @@ export class IosSimctlDriver implements Driver {
     osVersion: string,
     catalog: SimctlCatalog,
   ): VirtualSpec {
-    if (!isVersionInRange(osVersion, deviceType)) {
-      throw new IosVersionOutOfRangeError(deviceType.name, osVersion, deviceType);
-    }
-
     // why: Looked up among the runtimes the catalog lists for this model, so a listed pair always
     // resolves and an unlisted one never does (ADR 0008 §3). Any installed build of the version
-    // that pairs will do: two builds can share a marketing version and pair differently.
+    // that pairs will do. Before the range check: `18` reads as 18.0 there, below a model whose
+    // first runtime is 18.3 while 18.6 pairs with it.
     const paired = findPairedRuntime(catalog, deviceType, osVersion);
     if (paired !== undefined) {
       return this.#commitResolution(deviceType, paired);
     }
+    if (!isVersionInRange(osVersion, deviceType)) {
+      throw new IosVersionOutOfRangeError(deviceType.name, osVersion, deviceType);
+    }
     // why: Installed but not paired: in the model's declared `[min, max]` range is necessary but not
     // sufficient, since `supportedDeviceTypeIds` is the authoritative source once a runtime is
     // on disk. Refused before committing, so a mismatch never reaches `simctl create`.
-    if (findInstalledRuntime(catalog, osVersion) !== undefined) {
+    const installed = catalog.runtimes.filter((runtime) => runtime.isAvailable);
+    if (newestNamed(installed, osVersion) !== undefined) {
       throw new IosRuntimeUnpairedError(deviceType.name, osVersion);
     }
 
@@ -2429,6 +2431,14 @@ function findInstalledRuntime(catalog: SimctlCatalog, version: string): Runtime 
   return catalog.runtimes.find((runtime) => runtime.isAvailable && runtime.version === version);
 }
 
+// why: a bare version names itself first, else the newest installed one under it (`26` -> 26.2).
+function newestNamed(runtimes: readonly Runtime[], version: string): Runtime | undefined {
+  return (
+    runtimes.find((runtime) => runtime.version === version) ??
+    newestRuntime(runtimes.filter((runtime) => namesOsVersion(version, runtime.version)))
+  );
+}
+
 function findDeviceType(catalog: SimctlCatalog, model: string): DeviceType | undefined {
   const wanted = model.toLocaleLowerCase();
   return catalog.deviceTypes.find((candidate) => candidate.name.toLocaleLowerCase() === wanted);
@@ -2451,9 +2461,7 @@ function findPairedRuntime(
   deviceType: DeviceType,
   version: string,
 ): Runtime | undefined {
-  return pairedInstalledRuntimes(catalog, deviceType).find(
-    (runtime) => runtime.version === version,
-  );
+  return newestNamed(pairedInstalledRuntimes(catalog, deviceType), version);
 }
 
 function pairedVersions(catalog: SimctlCatalog, deviceType: DeviceType | undefined): string[] {
