@@ -112,10 +112,21 @@ describe("satisfies", () => {
     expect(satisfies(version, parsed(text))).toBe(expected);
   });
 
-  it("reads a bare version as exact: 18 does not satisfy a device on 18.4", () => {
-    expect(satisfies("18.4", parsed("18"))).toBe(false);
+  it("reads a bare version as itself and every version under it", () => {
+    expect(satisfies("18.4", parsed("18"))).toBe(true);
+    expect(satisfies("26.0", parsed("26"))).toBe(true);
     expect(satisfies("18", parsed("18"))).toBe(true);
     expect(satisfies("18.4", parsed("18.4"))).toBe(true);
+    expect(satisfies("18.4.1", parsed("18.4"))).toBe(true);
+  });
+
+  it("does not let a bare version name a longer number or a sibling", () => {
+    expect(satisfies("26.0", parsed("2"))).toBe(false);
+    expect(satisfies("18.40", parsed("18.4"))).toBe(false);
+    expect(satisfies("18.5", parsed("18.4"))).toBe(false);
+    expect(satisfies("18", parsed("18.4"))).toBe(false);
+    expect(satisfies("34-ext12", parsed("34"))).toBe(false);
+    expect(satisfies("35", parsed("3"))).toBe(false);
   });
 });
 
