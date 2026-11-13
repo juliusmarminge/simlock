@@ -1,4 +1,4 @@
-import { RuntimeMissingError, UnknownModelError } from "../../core/index.js";
+import { RuntimeMissingError, UnknownModelError, namesOsVersion } from "../../core/index.js";
 import {
   type DeviceType,
   type Runtime,
@@ -113,8 +113,14 @@ export function findPairedRuntime(
   deviceType: DeviceType,
   version: string,
 ): Runtime | undefined {
-  return pairedInstalledRuntimes(catalog, deviceType).find(
-    (runtime) => runtime.version === version,
+  return newestNamed(pairedInstalledRuntimes(catalog, deviceType), version);
+}
+
+// why: a bare version names itself first, else the newest installed one under it (`26` -> 26.2).
+export function newestNamed(runtimes: readonly Runtime[], version: string): Runtime | undefined {
+  return (
+    runtimes.find((runtime) => runtime.version === version) ??
+    newestRuntime(runtimes.filter((runtime) => namesOsVersion(version, runtime.version)))
   );
 }
 

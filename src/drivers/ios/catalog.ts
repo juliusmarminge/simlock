@@ -25,7 +25,7 @@ import {
   IosUnknownModelError,
   IosVersionOutOfRangeError,
   IosRuntimeUnpairedError,
-  findInstalledRuntime,
+  newestNamed,
   findDeviceType,
   pairedInstalledRuntimes,
   findPairedRuntime,
@@ -114,21 +114,22 @@ export class SimulatorCatalog {
     osVersion: string,
     catalog: SimctlCatalog,
   ): VirtualSpec {
-    if (!isVersionInRange(osVersion, deviceType)) {
-      throw new IosVersionOutOfRangeError(deviceType.name, osVersion, deviceType);
-    }
-
     // why: Looked up among the runtimes the catalog lists for this model, so a listed pair always
     // resolves and an unlisted one never does (ADR 0008 §3). Any installed build of the version
-    // that pairs will do: two builds can share a marketing version and pair differently.
+    // that pairs will do. Before the range check: `18` reads as 18.0 there, below a model whose
+    // first runtime is 18.3 while 18.6 pairs with it.
     const paired = findPairedRuntime(catalog, deviceType, osVersion);
     if (paired !== undefined) {
       return this.#commitResolution(deviceType, paired);
     }
+    if (!isVersionInRange(osVersion, deviceType)) {
+      throw new IosVersionOutOfRangeError(deviceType.name, osVersion, deviceType);
+    }
     // why: Installed but not paired: in the model's declared `[min, max]` range is necessary but not
     // sufficient, since `supportedDeviceTypeIds` is the authoritative source once a runtime is
     // on disk. Refused before committing, so a mismatch never reaches `simctl create`.
-    if (findInstalledRuntime(catalog, osVersion) !== undefined) {
+    const installed = catalog.runtimes.filter((runtime) => runtime.isAvailable);
+    if (newestNamed(installed, osVersion) !== undefined) {
       throw new IosRuntimeUnpairedError(deviceType.name, osVersion);
     }
 

@@ -38,6 +38,7 @@ export {
   IllegalTransition,
   transition,
   transitionEnteredAt,
+  namesOsVersion,
 } from "./domain.js";
 export {
   buildCapacityFigures,

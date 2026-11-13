@@ -58,7 +58,8 @@ use the contract's names.
 
 ### 2. The OS constraint is one string, parsed at the boundary
 
-`osVersion` stays a string. A bare version is exact. A range is the
+`osVersion` stays a string. A bare version names itself and, in this fork, every
+version under it (`26` is any 26.x; upstream reads it as exact). A range is the
 node-semver subset the feature names: the comparators `>=`, `>`, `<=`, `<`,
 several joined by spaces, and the hyphen range `A - B`. A partial version
 covers its prefix as node-semver reads it.
