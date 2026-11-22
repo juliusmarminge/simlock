@@ -1,6 +1,6 @@
 // why: 0.21.28 is the first agent-device release with every change the edge relies on (tenant authenticate, caller-chosen lease ids, allocate by spec, the iOS device set, session end with the lease, release after close, the lease on uploads).
 export const MIN_AGENT_DEVICE_VERSION = "0.21.28";
-export const AGENT_DEVICE_RPC_PROTOCOL_VERSION = 2;
+export const AGENT_DEVICE_RPC_PROTOCOL_VERSION = 3;
 export const MIN_NODE_VERSION = "22.12.0";
 
 interface ParsedVersion {

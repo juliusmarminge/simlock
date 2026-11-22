@@ -87,7 +87,7 @@ describe("the agent-device front, through the whole worker daemon", () => {
     const unreachable = await envelopeOf(await allocate(rig, 2));
     rig.fake.setUnreachable(false);
 
-    expect(unreachable.error?.data?.code).toBe("COMMAND_FAILED");
+    expect(unreachable.error?.data?.code).toBe("UNKNOWN");
     await expect.poll(async () => (await leases(rig)).map((lease) => lease.id)).toEqual([hex(1)]);
 
     rig.fake.answerNextAllocateWith("<html>bad gateway</html>");

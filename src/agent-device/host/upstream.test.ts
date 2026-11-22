@@ -31,7 +31,7 @@ async function arrange(version: string) {
   const filesystem = new MemoryFilesystem();
   const probe = new FakeTcpProbe();
   const health = new FakeAgentDeviceHealth();
-  health.respondWith({ rpcProtocolVersion: 2, service: "agent-device-daemon" });
+  health.respondWith({ rpcProtocolVersion: 3, service: "agent-device-daemon" });
   await filesystem.mkdirp(home);
   await filesystem.mkdirp("/usr/local/bin");
   await filesystem.mkdirp(`${packageRoot}/bin`);

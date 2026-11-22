@@ -173,8 +173,8 @@ importers:
   .:
     dependencies:
       '@agent-device/proxy':
-        specifier: 0.21.36
-        version: 0.21.36
+        specifier: 0.21.41
+        version: 0.21.41
       '@hono/node-server':
         specifier: 2.1.5
         version: 2.1.5(hono@4.13.17)
@@ -326,8 +326,8 @@ packages:
   '@adobe/css-tools@4.5.0':
     resolution: {integrity: sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q==}
 
-  '@agent-device/proxy@0.21.36':
-    resolution: {integrity: sha512-p9Vhhe8CiuwTZI3zZ8jwlcpKZkMFDM/JUWGwuUmf+/dCe763aT4GHR3zvD6VzLDg6X5zMSYdq2f7EEzqxfIy3g==}
+  '@agent-device/proxy@0.21.41':
+    resolution: {integrity: sha512-VAuqR/hyshzeohHaUMhFrgf7y/A7c2DbThfyB1n+rmSaAkXe4TWHj2OEvBLJtu5loeVOa62K9zWRPUHCdeWdNA==}
     engines: {node: '>=22.12'}
 
   '@ai-sdk/provider@4.0.37':
@@ -4307,7 +4307,7 @@ snapshots:
 
   '@adobe/css-tools@4.5.0': {}
 
-  '@agent-device/proxy@0.21.36': {}
+  '@agent-device/proxy@0.21.41': {}
 
   '@ai-sdk/provider@4.0.37':
     dependencies:

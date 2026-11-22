@@ -211,17 +211,17 @@ describe("AgentDeviceSupervisor readiness", () => {
     expect(stateOf(harness)).toBe("running");
   });
 
-  it("stops the child and reports wrong-version naming both protocols when /health answers protocol 3", async () => {
+  it("stops the child and reports wrong-version naming both protocols when /health answers protocol 2", async () => {
     const harness = await arrange();
-    harness.health.respondWith({ rpcProtocolVersion: 3, service: "agent-device-daemon" });
+    harness.health.respondWith({ rpcProtocolVersion: 2, service: "agent-device-daemon" });
 
     await advancing(harness, harness.begin());
 
     expect(unavailable(harness)).toMatchObject({
-      message: "agent-device 0.21.28 speaks RPC protocol 3, need 2",
+      message: "agent-device 0.21.28 speaks RPC protocol 2, need 3",
       reason: "wrong-version",
     });
-    expect(unavailable(harness).remedy).toContain("RPC protocol 2");
+    expect(unavailable(harness).remedy).toContain("RPC protocol 3");
     for (const phrase of restartCommand) expect(unavailable(harness).remedy).toContain(phrase);
     expect(harness.processes.signals).toEqual([
       { pid: harness.children[0]?.pid, signal: "SIGTERM" },

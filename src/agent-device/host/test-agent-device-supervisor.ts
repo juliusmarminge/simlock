@@ -43,7 +43,7 @@ export const httpPort = 4310;
 
 export const token = "daemon-token";
 
-export const healthyBody = { rpcProtocolVersion: 2, service: "agent-device-daemon" };
+export const healthyBody = { rpcProtocolVersion: 3, service: "agent-device-daemon" };
 
 export const restartCommand = ["simlock daemon stop", "simlock daemon start"];
 

@@ -204,7 +204,7 @@ describe("startDaemon with the agent-device edge", () => {
   it("stops both agent-device daemons when the worker stops, the phone daemon and the simulator daemon each by its own pid", async () => {
     const setup = await setUp({ capabilities: { "agent-device": { command, enabled: true } } });
     const health = new FakeAgentDeviceHealth();
-    health.respondWith({ rpcProtocolVersion: 2, service: "agent-device-daemon" });
+    health.respondWith({ rpcProtocolVersion: 3, service: "agent-device-daemon" });
     const tcpProbe = new FakeTcpProbe();
     const processSupervisor = new KillingSupervisor();
     const version = {
@@ -637,7 +637,7 @@ describe("startDaemon with the agent-device edge", () => {
           },
         });
         const health = new FakeAgentDeviceHealth();
-        health.respondWith({ rpcProtocolVersion: 2, service: "agent-device-daemon" });
+        health.respondWith({ rpcProtocolVersion: 3, service: "agent-device-daemon" });
         const tcpProbe = new FakeTcpProbe();
         const runner = scriptedDaemons(setup, tcpProbe, simulator, phones);
         const { clock, daemon } = await startEdge(setup, {

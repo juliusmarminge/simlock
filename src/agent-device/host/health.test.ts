@@ -37,11 +37,11 @@ async function serve(
 describe("NodeAgentDeviceHealthProbe", () => {
   it("returns the JSON body of GET /health", async () => {
     const { baseUrl, urls } = await serve(() => ({
-      body: JSON.stringify({ rpcProtocolVersion: 2, service: "agent-device-daemon" }),
+      body: JSON.stringify({ rpcProtocolVersion: 3, service: "agent-device-daemon" }),
     }));
 
     await expect(new NodeAgentDeviceHealthProbe().read(baseUrl)).resolves.toEqual({
-      rpcProtocolVersion: 2,
+      rpcProtocolVersion: 3,
       service: "agent-device-daemon",
     });
     expect(urls).toEqual(["/health"]);
